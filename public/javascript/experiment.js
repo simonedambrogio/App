@@ -1,3 +1,4 @@
+
 function drawRect(canvas){
         
     // ---- Define Parameters ---- //
@@ -442,8 +443,8 @@ function drawRect(canvas){
     }
 }
 
-function send_reward(){
-    let data = { isReward: true }
+function sendReward(isCorrect){
+    let data = { isReward: isCorrect }
     let options = {
         method: 'POST',
         headers: {
@@ -454,19 +455,8 @@ function send_reward(){
     fetch('/data', options);
 }
 
-function controlLed(){
-    let url = 'http://localhost:3000/';
-    axios.get(url)
-        .then((response) => {
-            console.log(response)
-        })
-        .catch(function (error) {
-            // handle error
-            console.log(error);
-        })
-}
-
 function run_experiment () {
+    
     const jsPsych = initJsPsych({
         on_finish: () => {
             $.ajax({
@@ -485,25 +475,31 @@ function run_experiment () {
         }
     });
 
-    const reward = {
-        type: jsPsychHtmlKeyboardResponse,
-        stimulus: 'Reward', 
-        response_ends_trial: false,
-        trial_duration: 1000,
-        on_start: () => {
-            controlLed()
-        },
-        on_finish: () => {
-        }
-    }
+    var choice;
     
     const rdk = {
-        on_start: () => send_reward(),
         type: jsPsychCanvasKeyboardResponse,
         canvas_size: () => { return [window.innerHeight, window.innerWidth] },
         stimulus: drawRect,
-        choices: ['e','i']
+        choices: ['e','i'],
+        on_finish: () => { choice = jsPsych.data.getLastTrialData().trials[0].response }
     }
+
+    const reward = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: () => { 
+            return choice=='e' ? 'Correct' : 'Incorrect'
+        }, 
+        response_ends_trial: false,
+        trial_duration: 1000,
+        on_start: () => {       
+            sendReward(choice=='e')
+        }
+    }
+
     
-    jsPsych.run([rdk, reward, rdk, reward, rdk, reward]);    
+    jsPsych.run([
+        rdk, reward, rdk, reward, rdk, reward, rdk, reward, 
+        rdk, reward, rdk, reward, rdk, reward, rdk, reward
+                ]);    
 }

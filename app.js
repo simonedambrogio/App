@@ -25,21 +25,17 @@ const app = express();
 app.use(express.json())
 app.use(express.static('./public'));
 
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    next();
-});
 
 var isReward = false;
 app.post('/data', async (request, response) => {
     isReward = request.body.isReward;
+    toggleLed(isReward);
+    response.end();
 })
 
 
 app.get('/', function(req, res) {
     res.sendFile(path.join(__dirname, '/public/html/experiment.html'));
-    console.log(isReward)
-    toggleLed(isReward);
 });
 
 app.get('/finish', function(req, res) {
@@ -48,6 +44,7 @@ app.get('/finish', function(req, res) {
 
 app.post('/experiment-data', function(request, response) {
     exp_data = request.body;
+    
     merged_exp_data = exp_data.reduce((a, e) => 
         // iterate each object entry as [key, value] and use "a" as accumulator
         Object.entries(e).reduce((a, t) => {
